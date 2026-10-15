@@ -1,5 +1,6 @@
 {
   "apiOrigin": "",
+  "subscriptionsOrigin": "",
   "snapshotPath": "./data/snapshot.json",
-  "featureVersion": "20261015-jd-secret-public-v5"
+  "featureVersion": "20261015-jd-secret-public-v7"
 }

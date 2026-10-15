@@ -9,3 +9,9 @@
 .range-buttons .custom-range{flex:1.6;white-space:nowrap}.custom-range[aria-pressed="false"]{background:white;color:#43536a}.custom-range{margin:0;justify-content:center}.custom-range[aria-pressed="true"]{border-color:var(--primary);color:var(--primary)}
 
 @media(max-width:750px){.range-buttons .custom-range{flex-basis:100%}}
+
+.header-status{display:flex;align-items:center;gap:16px;min-width:0}#accessDialog{width:min(460px,calc(100% - 24px))}#accessForm{padding:18px 20px}#accessForm p,#accessForm small{font-size:13px;color:var(--muted);line-height:1.7;margin:0 0 14px}#accessForm label{display:block;margin-bottom:8px;font-size:13px;font-weight:700}#accessForm small{display:block;margin:10px 0 0}#accessError{color:#a33b35!important;margin-top:12px!important}#connectAccess{width:100%;margin-top:10px}@media(max-width:750px){.header-status{width:100%;justify-content:space-between;gap:10px}.header-status .update{width:auto;min-width:0}.header-status>.button{max-width:44%;font-size:12px;overflow:hidden;text-overflow:ellipsis;display:block;padding:0 10px}}
+
+.header-status>#accessButton{max-width:220px;overflow:hidden;text-overflow:ellipsis;display:block}@media(max-width:750px){.header-status>#accessButton{max-width:44%}}
+
+@media(max-width:750px){#accessButton .access-user{display:none}}
