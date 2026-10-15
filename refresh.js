@@ -1,7 +1,7 @@
 import {FIELDS} from './model.js';
 import {keywordDigest,snapshotResult} from './snapshot.js';
 
-export function createSnapshotReader(path,{fetch:request=globalThis.fetch}={}) {
+export function createSnapshotReader(path,{fetch:request=globalThis.fetch,validate:customValidate}={}) {
   let cached=null,etag='',signature='',revision=0,pending=null;
   function validate(value) {
     if(value?.schemaVersion!==1||!value.words||Array.isArray(value.words)||typeof value.words!=='object'||!Number.isFinite(Date.parse(value.updatedAt)))throw Error('每日数据格式异常，保留上次数据。');
@@ -18,7 +18,7 @@ export function createSnapshotReader(path,{fetch:request=globalThis.fetch}={}) {
         const response=await request(path,{cache:'no-cache',credentials:'omit',headers:etag?{'If-None-Match':etag}:{},signal:AbortSignal.timeout(60000)});
         if(response.status===304){if(!cached)throw Error('每日数据暂未同步，请稍后重试。');return cached;}
         if(!response.ok)throw Error('每日数据暂未同步，请稍后重试。');
-        const next=await response.json();validate(next);
+        const next=await response.json();(customValidate||validate)(next);
         if(cached&&Date.parse(next.updatedAt)<Date.parse(cached.updatedAt))throw Error('暂未取得最新快照，保留上次数据。');
         const nextSignature=JSON.stringify(next);
         if(nextSignature!==signature){cached=next;signature=nextSignature;revision++;}
