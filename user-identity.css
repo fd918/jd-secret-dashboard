@@ -1,0 +1,24 @@
+.user-identity { min-width:0; max-width:250px; line-height:1.35; }
+.user-identity-name-row { display:flex; align-items:center; gap:4px; min-width:0; }
+.user-identity-name { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text); font-weight:700; }
+button.user-identity-name { border:0; background:transparent; padding:0; font:inherit; font-weight:700; text-align:left; cursor:pointer; }
+button.user-identity-name:hover { color:var(--blue); text-decoration:underline; text-underline-offset:3px; }
+.user-identity-action { width:28px; height:28px; flex:0 0 28px; display:inline-grid; place-items:center; border:1px solid var(--line); border-radius:7px; background:#fff; color:#64748b; padding:0; cursor:pointer; transition:background .18s ease,border-color .18s ease,color .18s ease; touch-action:manipulation; }
+.user-identity-action:hover { border-color:#fdba74; background:#fff7ed; color:#c2410c; }
+.user-identity-action:focus-visible,.user-identity-copy:focus-visible { outline:2px solid var(--blue); outline-offset:2px; }
+.user-identity-action svg { width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+.user-identity-action.favorite[aria-pressed="true"] { border-color:#fdba74; background:#fff7ed; color:#e98200; }
+.user-identity-action.favorite[aria-pressed="true"] svg { fill:currentColor; }
+.user-identity-action:disabled { opacity:1; cursor:default; }
+.user-identity-action:disabled:hover { border-color:#fdba74; background:#fff7ed; color:#e98200; }
+.user-identity-meta,.user-identity-phone { display:flex; align-items:center; gap:5px; min-width:0; margin-top:4px; color:var(--muted); font-size:11px; }
+.user-identity-phone { margin-top:2px; }
+.user-identity-copy { display:inline-flex; align-items:center; min-width:0; min-height:22px; border:0; background:transparent; color:var(--blue); padding:0; font:inherit; font-size:11px; cursor:pointer; touch-action:manipulation; }
+.user-identity-copy:hover { text-decoration:underline; text-underline-offset:2px; }
+.user-identity-copy.phone { max-width:100%; overflow:hidden; color:#475569; text-overflow:ellipsis; white-space:nowrap; }
+.user-identity-copy:disabled { color:var(--muted); cursor:default; text-decoration:none; }
+.user-identity-version { display:inline-flex; max-width:92px; overflow:hidden; padding:2px 6px; border-radius:5px; background:#f1f5f9; color:#475569; font-size:10px; text-overflow:ellipsis; white-space:nowrap; }
+.user-identity-version[data-version="企业版"] { color:#6941c6; background:#f4ebff; border:1px solid #d6bbfb; }
+.user-identity-version[data-version="旗舰版"] { color:#b54708; background:#fff4df; border:1px solid #fed7aa; }
+.user-identity-version[data-version="标准版"] { color:#175cd3; background:#eff8ff; border:1px solid #b2ddff; }
+.user-identity-version[data-version] { display:inline-flex; align-items:center; padding:2px 6px; border-radius:4px; white-space:nowrap; }
