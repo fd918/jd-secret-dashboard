@@ -1,4 +1,4 @@
-import {ADMIN_FILES,openAdminCatalog} from './admin-model.js?v=20261019-admin-v1';
+import {ADMIN_FILES,openAdminCatalog} from './admin-model.js?v=20261019-table-v2';
 const $=id=>document.getElementById(id);
 let password='',catalogs=null,signatures=null,pending=false,generation=0;
 const emit=()=>window.dispatchEvent(new CustomEvent('promotion-admin-change',{detail:catalogs?{jd:[...catalogs.jd.entries],taobao:[...catalogs.taobao.entries]}:null}));

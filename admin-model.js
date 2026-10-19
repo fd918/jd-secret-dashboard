@@ -30,7 +30,16 @@ export async function openAdminCatalog(envelope,password,platform,crypto=globalT
  envelope=sanitizeAdminEnvelope(envelope,platform);const salt=decode(envelope.salt),iv=decode(envelope.iv),data=decode(envelope.data);
  try{const key=await derive(password,salt,crypto),plain=await crypto.subtle.decrypt({name:'AES-GCM',iv,additionalData:encoder.encode(platform)},key,data),value=JSON.parse(decoder.decode(plain));if(value.schemaVersion!==1||value.platform!==platform)throw Error();return adminCatalog(platform,value.entries);}catch{throw Error('口令不正确，无法解锁总览。');}
 }
-export function adminPage(entries,query='',page=1,size=50){
- const term=query.trim().toLocaleLowerCase(),matched=entries.map((value,index)=>({value,index})).filter(row=>row.value.toLocaleLowerCase().includes(term)),pages=Math.max(1,Math.ceil(matched.length/size)),current=Math.max(1,Math.min(pages,page));
+export function sortedRows(entries,{field='identity',direction='asc',valueOf}={}){
+ const rows=entries.map((value,index)=>({value,index})),read=row=>field==='identity'?row.value:valueOf?.(row.value,field),sign=direction==='asc'?1:-1;
+ return rows.sort((a,b)=>{const x=read(a),y=read(b),validX=field==='identity'?typeof x==='string':Number.isFinite(x),validY=field==='identity'?typeof y==='string':Number.isFinite(y);if(!validX||!validY)return validX?-1:validY?1:a.index-b.index;const delta=field==='identity'?x.localeCompare(y,'zh-CN',{numeric:true}):x-y;return delta*sign||a.index-b.index;});
+}
+export function bindTableSorting(root,sort,onChange){
+ const buttons=[...root.querySelectorAll('button[data-sort]')];
+ for(const button of buttons)button.onclick=()=>{const field=button.dataset.sort;sort.direction=sort.field===field?(sort.direction==='desc'?'asc':'desc'):(field==='identity'?'asc':'desc');sort.field=field;onChange();};
+ return ()=>{for(const button of buttons){const active=sort.field===button.dataset.sort,next=active&&sort.direction==='desc'?'升序':'降序',current=sort.direction==='desc'?'降序':'升序';button.closest('th').setAttribute('aria-sort',active?(sort.direction==='desc'?'descending':'ascending'):'none');button.querySelector('.sort-indicator').textContent=active?(sort.direction==='desc'?'↓':'↑'):'↕';button.setAttribute('aria-label',button.dataset.label+'，'+(active?'当前'+current+'，':'')+'点击'+(active?next:button.dataset.sort==='identity'?'升序':'降序')+'排列');}};
+}
+export function adminPage(entries,query='',page=1,size=50,sort=null){
+ const term=query.trim().toLocaleLowerCase(),matched=(sort?sortedRows(entries,sort):entries.map((value,index)=>({value,index}))).filter(row=>row.value.toLocaleLowerCase().includes(term)),pages=Math.max(1,Math.ceil(matched.length/size)),current=Math.max(1,Math.min(pages,page));
  return {rows:matched.slice((current-1)*size,current*size),page:current,pages,total:matched.length};
 }

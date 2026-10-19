@@ -7,6 +7,10 @@ export const emptyTaobao=()=>Object.fromEntries(TB_FIELDS.map(k=>[k,null]));
 export function normalizePid(value){const pid=typeof value==='string'?value.trim():'';if(!/^mm_[1-9]\d{0,19}_[1-9]\d{0,19}_[1-9]\d{0,19}$/.test(pid))throw Error('请输入完整推广位 PID，格式如 mm_账号ID_媒体ID_推广位ID。');return pid;}
 export function normalizePids(values){if(!Array.isArray(values))return [];return [...new Set(values.map(v=>{try{return normalizePid(v);}catch{return '';}}).filter(Boolean))].slice(0,20);}
 export function sumKnown(values){return !values.length||values.some(v=>v===null||!Number.isFinite(v))?null:Math.round(values.reduce((a,b)=>a+b,0)*100)/100;}
+// 跨推广位只合计已返回的完整区间值；单个推广位的缺日与CPA截止日口径保持。
+export function summarizeTaobao(results){
+ const rows=Array.from(results),totals=emptyTaobao(),coverage={};for(const field of TB_FIELDS){const values=rows.map(row=>row.totals[field]).filter(Number.isFinite);totals[field]=values.length?Math.round(values.reduce((a,b)=>a+b,0)*100)/100:null;coverage[field]={known:values.length,total:rows.length};}return {totals,coverage};
+}
 export function validateTaobaoSnapshot(value){
  if(value?.schemaVersion!==1||!value.positions||Array.isArray(value.positions)||!Number.isFinite(Date.parse(value.updatedAt)))throw Error('淘宝快照格式异常。');
  for(const [digest,record]of Object.entries(value.positions)){if(!/^[a-f0-9]{64}$/.test(digest)||!record?.days||Array.isArray(record.days))throw Error('淘宝快照身份异常。');for(const [date,day]of Object.entries(record.days)){if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!Number.isFinite(Date.parse(day.updatedAt))||TB_FIELDS.some(k=>day.values?.[k]!==null&&(!Number.isFinite(day.values?.[k])||day.values[k]<0)))throw Error('淘宝快照指标异常。');}}
