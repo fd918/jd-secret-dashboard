@@ -1,4 +1,4 @@
-import {ADMIN_FILES,openAdminCatalog} from './admin-model.js?v=20261021-alliance-v4';
+import {ADMIN_FILES,openAdminCatalog} from './admin-model.js?v=20261021-active-v5';
 const $=id=>document.getElementById(id);
 let password='',catalogs=null,signatures=null,pending=false,generation=0;
 const emit=()=>window.dispatchEvent(new CustomEvent('promotion-admin-change',{detail:catalogs?{jd:[...catalogs.jd.entries],taobao:[...catalogs.taobao.entries],jdOwners:catalogs.jd.owners||{},jdAlliances:catalogs.jd.alliances||{},jdOwnersUpdatedAt:catalogs.jd.ownersUpdatedAt||'',jdOwnersError:catalogs.jd.ownersError||''}:null}));
