@@ -1,7 +1,7 @@
-import {ADMIN_FILES,openAdminCatalog} from './admin-model.js?v=20261021-active-v5';
+import {ADMIN_FILES,openAdminCatalog} from './admin-model.js?v=20261023-gift-v6';
 const $=id=>document.getElementById(id);
 let password='',catalogs=null,signatures=null,pending=false,generation=0;
-const emit=()=>window.dispatchEvent(new CustomEvent('promotion-admin-change',{detail:catalogs?{jd:[...catalogs.jd.entries],taobao:[...catalogs.taobao.entries],jdOwners:catalogs.jd.owners||{},jdAlliances:catalogs.jd.alliances||{},jdOwnersUpdatedAt:catalogs.jd.ownersUpdatedAt||'',jdOwnersError:catalogs.jd.ownersError||''}:null}));
+const emit=()=>window.dispatchEvent(new CustomEvent('promotion-admin-change',{detail:catalogs?{jd:[...catalogs.jd.entries],taobao:[...catalogs.taobao.entries],jdOwners:catalogs.jd.owners||{},jdGift:catalogs.jd.gift||null,jdAlliances:catalogs.jd.alliances||{},jdOwnersUpdatedAt:catalogs.jd.ownersUpdatedAt||'',jdOwnersError:catalogs.jd.ownersError||''}:null}));
 async function readCatalogs(code){
  const results=await Promise.all(Object.entries(ADMIN_FILES).map(async([platform,file])=>{
   let response;try{response=await fetch('./'+file,{cache:'no-cache',credentials:'omit',signal:AbortSignal.timeout(20000)});}catch{throw Error('总览目录暂时无法读取，请稍后重试。');}

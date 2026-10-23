@@ -21,7 +21,16 @@ export function adminCatalog(platform,entries,info={}){
   if(platform!=='jd'||!info.alliances||Array.isArray(info.alliances)||typeof info.alliances!=='object')throw Error('联盟归属格式异常。');
   result.alliances=Object.fromEntries(result.entries.map(word=>{const ids=Object.hasOwn(info.alliances,word)?info.alliances[word]:[];if(!Array.isArray(ids)||ids.length>20||ids.some(id=>typeof id!=='string'||!(/^[1-9]\d{0,19}$/).test(id)))throw Error('联盟归属格式异常。');return [word,[...new Set(ids)].sort()];}));
  }
+ if(Object.hasOwn(info,'gift')){if(platform!=='jd')throw Error('全部红包数据平台异常。');result.gift=cleanGift(info.gift);}
  return result;
+}
+export function cleanGift(value){
+ if(!value||typeof value.days!=='object'||!value.days||Array.isArray(value.days)||Object.keys(value.days).length>1000||typeof (value.error||'')!=='string'||(value.error||'').length>150)throw Error('全部红包数据格式异常。');
+ const days=Object.fromEntries(Object.entries(value.days).map(([date,day])=>{if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!Number.isFinite(Date.parse(date+'T00:00:00Z'))||new Date(date+'T00:00:00Z').toISOString().slice(0,10)!==date||!Array.isArray(day?.accounts)||day.accounts.length>2)throw Error('全部红包日期异常。');const accounts=day.accounts.map(a=>{if(!['1000187928','1002114292'].includes(a?.unionId)||!Number.isSafeInteger(a.giveNum)||a.giveNum<0||typeof a.updatedAt!=='string'||!Number.isFinite(Date.parse(a.updatedAt)))throw Error('全部红包账号数据异常。');return {unionId:a.unionId,giveNum:a.giveNum,updatedAt:a.updatedAt};});if(new Set(accounts.map(a=>a.unionId)).size!==accounts.length)throw Error('全部红包账号重复。');return [date,{accounts}];}));return {days,error:value.error||''};
+}
+export function giftRange(value,dates){
+ const accounts=['1000187928','1002114292'].map(unionId=>{const rows=dates.map(d=>value?.days?.[d]?.accounts.find(a=>a.unionId===unionId)),complete=rows.length>0&&rows.every(Boolean),times=rows.map(r=>r?.updatedAt).filter(Boolean).sort((a,b)=>Date.parse(a)-Date.parse(b));return {unionId,giveNum:complete?rows.reduce((s,r)=>s+r.giveNum,0):null,updatedAt:times[0]||''};}),complete=accounts.every(a=>a.giveNum!==null),total=complete?accounts.reduce((s,a)=>s+a.giveNum,0):null;
+ return {total,accounts,availableDays:dates.filter(d=>value?.days?.[d]?.accounts.length===2).length,totalDays:dates.length,error:value?.error||''};
 }
 async function derive(password,salt,crypto){
  if(typeof password!=='string'||!password||password.length>256)throw Error('请输入管理员口令。');
