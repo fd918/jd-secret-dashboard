@@ -1,4 +1,5 @@
-import {normalizeKeyword} from './model.js';
+import {snapshotResult} from './snapshot.js';
+import {normalizeKeyword,FIELDS,totalMetrics} from './model.js';
 import {normalizePid} from './taobao-model.js';
 
 export const ADMIN_ITERATIONS=600000;
@@ -21,6 +22,7 @@ export function adminCatalog(platform,entries,info={}){
   if(platform!=='jd'||!info.alliances||Array.isArray(info.alliances)||typeof info.alliances!=='object')throw Error('联盟归属格式异常。');
   result.alliances=Object.fromEntries(result.entries.map(word=>{const ids=Object.hasOwn(info.alliances,word)?info.alliances[word]:[];if(!Array.isArray(ids)||ids.length>20||ids.some(id=>typeof id!=='string'||!(/^[1-9]\d{0,19}$/).test(id)))throw Error('联盟归属格式异常。');return [word,[...new Set(ids)].sort()];}));
  }
+ if(Object.hasOwn(info,'themes')){if(platform!=='jd')throw Error('主题数据平台异常。');result.themes=cleanThemes(info.themes);}
  if(Object.hasOwn(info,'gift')){if(platform!=='jd')throw Error('全部红包数据平台异常。');result.gift=cleanGift(info.gift);}
  return result;
 }
@@ -63,4 +65,19 @@ export function bindTableSorting(root,sort,onChange){
 export function adminPage(entries,query='',page=1,size=50,sort=null){
  const term=query.trim().toLocaleLowerCase(),matched=(sort?sortedRows(entries,sort):entries.map((value,index)=>({value,index}))).filter(row=>(row.value+' '+(sort?.searchText?.(row.value)||'')).toLocaleLowerCase().includes(term)),pages=Math.max(1,Math.ceil(matched.length/size)),current=Math.max(1,Math.min(pages,page));
  return {rows:matched.slice((current-1)*size,current*size),page:current,pages,total:matched.length};
+}
+
+export function cleanThemes(value){
+ const fail=()=>{throw Error('密令主题数据格式异常。');},text=(v,max)=>{if(typeof v!=='string'||v.length>max||/[\u0000-\u001f\u007f]/.test(v))fail();return v;};
+ if(!value||!Array.isArray(value.words)||value.words.length>20000||new Set(value.words).size!==value.words.length||value.words.some(w=>normalizeKeyword(w)!==w)||!Array.isArray(value.items)||value.items.length>1000||!value.days||typeof value.days!=='object'||Array.isArray(value.days)||Object.keys(value.days).length>1000)fail();
+ const ids=new Set(),items=value.items.map(i=>{if(typeof i?.id!=='string'||!/^(\d{1,20}|unknown)$/.test(i.id)||ids.has(i.id)||!Array.isArray(i.words)||new Set(i.words).size!==i.words.length||i.words.some(n=>!Number.isInteger(n)||n<0||n>=value.words.length))fail();ids.add(i.id);return {id:i.id,name:text(i.name,200),words:[...i.words]};}),members=items.map(i=>new Set(i.words));
+ const days=Object.fromEntries(Object.entries(value.days).map(([date,day])=>{if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!Number.isFinite(Date.parse(date+'T00:00:00Z'))||new Date(date+'T00:00:00Z').toISOString().slice(0,10)!==date||!Array.isArray(day?.rows)||day.rows.length>20000||!Number.isFinite(Date.parse(day.updatedAt)))fail();const seen=new Set(),rows=day.rows.map(row=>{if(!Array.isArray(row)||row.length!==8||!Number.isInteger(row[0])||!Number.isInteger(row[1])||!members[row[0]]?.has(row[1])||row.slice(2).some(n=>n!==null&&!Number.isFinite(n)))fail();const key=row[0]+':'+row[1];if(seen.has(key))fail();seen.add(key);return [...row];});return [date,{updatedAt:text(day.updatedAt,40),rows}];}));return {words:[...value.words],items,days,error:text(value.error||'',150)};
+}
+const themeIndexes=new WeakMap();
+function themeIndex(themes){if(!themes)return null;let value=themeIndexes.get(themes);if(!value){value={words:new Map(themes.words.map((word,index)=>[word,index])),items:new Map(themes.items.map((item,index)=>[item.id,{...item,index}])),days:new Map(Object.entries(themes.days).map(([date,day])=>[date,{...day,rows:new Map(day.rows.map(row=>[row[0]+':'+row[1],row.slice(2)]))}]))};themeIndexes.set(themes,value);}return value;}
+export function themeWords(themes,id,entries){if(!id)return entries;const item=themeIndex(themes)?.items.get(id);return item?item.words.map(index=>themes.words[index]).filter(word=>entries.includes(word)):[];}
+export function themeWordResult(themes,id,entries,word,range){
+ const index=themeIndex(themes),item=index?.items.get(id),wi=index?.words.get(word),found=entries.includes(word)&&wi!==undefined&&(!id||item?.words.includes(wi)),days={};
+ if(found)for(const date of range.dates){const day=index.days.get(date);if(!day)continue;const rows=(id?[day.rows.get(item.index+':'+wi)]:[...index.items.values()].map(i=>day.rows.get(i.index+':'+wi))).filter(Boolean);days[date]={updatedAt:day.updatedAt,recordCount:rows.length,totals:rows.length?totalMetrics(rows.map(numbers=>Object.fromEntries(FIELDS.map((f,i)=>[f,numbers[i]])))):Object.fromEntries(FIELDS.map(f=>[f,0]))};}
+ return snapshotResult({schemaVersion:1,words:found?Object.fromEntries([[word,{days}]]) :{}},word,word,range);
 }
