@@ -1,17 +1,19 @@
 import {snapshotResult} from './snapshot.js';
 import {normalizeKeyword,FIELDS,totalMetrics} from './model.js';
+import {cleanSpeed} from './speed-model.js';
 import {normalizePid} from './taobao-model.js';
 
 export const ADMIN_ITERATIONS=600000;
-export const ADMIN_FILES={jd:'data/admin-jd.json',taobao:'data/admin-taobao.json'};
+export const ADMIN_FILES={jd:'data/admin-jd.json',taobao:'data/admin-taobao.json',speed:'data/admin-speed.json'};
 export const allianceLabel=ids=>(ids||[]).map(id=>({'1002114292':'非密令','1000187928':'密令'}[id]||'联盟 '+id)).join(' / ');
 const encoder=new TextEncoder(),decoder=new TextDecoder();
 const encode=bytes=>btoa(Array.from(bytes,byte=>String.fromCharCode(byte)).join(''));
-const decode=value=>{if(typeof value!=='string'||value.length>3000000||!/^[A-Za-z0-9+/]*={0,2}$/.test(value))throw Error('总览目录格式异常。');return Uint8Array.from(atob(value),char=>char.charCodeAt(0));};
+const decode=(value,max=3000000)=>{if(typeof value!=='string'||value.length>max||!/^[A-Za-z0-9+/]*={0,2}$/.test(value))throw Error('总览目录格式异常。');return Uint8Array.from(atob(value),char=>char.charCodeAt(0));};
 export function adminCatalog(platform,entries,info={}){
  if(!Object.hasOwn(ADMIN_FILES,platform)||!Array.isArray(entries)||entries.length>20000)throw Error('总览目录格式异常。');
- const normalize=platform==='jd'?normalizeKeyword:normalizePid;
+ const normalize=platform==='jd'?normalizeKeyword:platform==='speed'?(v=>{if(typeof v!=='string'||!/^\d{1,20}$/.test(v))throw Error('极速版账号格式异常。');return v;}):normalizePid;
  const result={schemaVersion:1,platform,entries:[...new Set(entries.map(entry=>{if(normalize(entry)!==entry)throw Error('总览目录身份异常。');return entry;}))].sort()};
+ if(Object.hasOwn(info,'speed')){if(platform!=='speed')throw Error('极速版数据平台异常。');result.speed=cleanSpeed(info.speed);}
  if(Object.hasOwn(info,'owners')){
   if(platform!=='jd'||!info.owners||Array.isArray(info.owners)||typeof info.owners!=='object')throw Error('用户资料格式异常。');
   const clean=(value,max)=>{if(typeof value!=='string'||value.length>max||/[\u0000-\u001f\u007f]/.test(value))throw Error('用户资料格式异常。');return value;};
@@ -46,11 +48,11 @@ export async function sealAdminCatalog(catalog,password,crypto=globalThis.crypto
 }
 export function sanitizeAdminEnvelope(envelope,platform){
  if(envelope?.schemaVersion!==1||envelope.platform!==platform||envelope.kdf!=='PBKDF2-SHA256'||envelope.iterations!==ADMIN_ITERATIONS||envelope.cipher!=='AES-256-GCM')throw Error('总览目录格式异常。');
- const salt=decode(envelope.salt),iv=decode(envelope.iv),data=decode(envelope.data);if(salt.length!==16||iv.length!==12||data.length<16)throw Error('总览目录格式异常。');
+ const salt=decode(envelope.salt),iv=decode(envelope.iv),data=decode(envelope.data,platform==='speed'?16000000:3000000);if(salt.length!==16||iv.length!==12||data.length<16)throw Error('总览目录格式异常。');
  return {schemaVersion:1,platform,kdf:envelope.kdf,iterations:ADMIN_ITERATIONS,cipher:envelope.cipher,salt:envelope.salt,iv:envelope.iv,data:envelope.data};
 }
 export async function openAdminCatalog(envelope,password,platform,crypto=globalThis.crypto){
- envelope=sanitizeAdminEnvelope(envelope,platform);const salt=decode(envelope.salt),iv=decode(envelope.iv),data=decode(envelope.data);
+ envelope=sanitizeAdminEnvelope(envelope,platform);const salt=decode(envelope.salt),iv=decode(envelope.iv),data=decode(envelope.data,platform==='speed'?16000000:3000000);
  try{const key=await derive(password,salt,crypto),plain=await crypto.subtle.decrypt({name:'AES-GCM',iv,additionalData:encoder.encode(platform)},key,data),value=JSON.parse(decoder.decode(plain));if(value.schemaVersion!==1||value.platform!==platform)throw Error();return adminCatalog(platform,value.entries,value);}catch{throw Error('口令不正确，无法解锁总览。');}
 }
 export function sortedRows(entries,{field='identity',direction='asc',valueOf}={}){

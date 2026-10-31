@@ -1,5 +1,5 @@
-import {createIdentityRenderer} from './user-identity.js?v=20261026-theme-v7';
-import {adminPage,sortedRows,bindTableSorting,allianceLabel,giftRange,themeWords,themeWordResult} from './admin-model.js?v=20261026-theme-v7';
+import {createIdentityRenderer} from './user-identity.js?v=20261031-speed-v1';
+import {adminPage,sortedRows,bindTableSorting,allianceLabel,giftRange,themeWords,themeWordResult} from './admin-model.js?v=20261031-speed-v1';
 import {createSnapshotReader,startSnapshotRefresh} from './refresh.js?v=20261015-v7';
 import {createCloudClient,normalizeAccessCode,subscriptionOrigin} from './cloud-client.js?v=20261015-v7';
 import {snapshotResult,keywordDigest,updateScheduleLabel} from './snapshot.js?v=20261015-v7';

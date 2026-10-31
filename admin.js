@@ -1,15 +1,18 @@
-import {ADMIN_FILES,openAdminCatalog} from './admin-model.js?v=20261026-theme-v7';
+import {ADMIN_FILES,openAdminCatalog} from './admin-model.js?v=20261031-speed-v1';
 const $=id=>document.getElementById(id);
 let password='',catalogs=null,signatures=null,pending=false,generation=0;
-const emit=()=>window.dispatchEvent(new CustomEvent('promotion-admin-change',{detail:catalogs?{jd:[...catalogs.jd.entries],taobao:[...catalogs.taobao.entries],jdOwners:catalogs.jd.owners||{},jdGift:catalogs.jd.gift||null,jdThemes:catalogs.jd.themes||null,jdAlliances:catalogs.jd.alliances||{},jdOwnersUpdatedAt:catalogs.jd.ownersUpdatedAt||'',jdOwnersError:catalogs.jd.ownersError||''}:null}));
+const emit=()=>window.dispatchEvent(new CustomEvent('promotion-admin-change',{detail:catalogs?{jd:[...catalogs.jd.entries],taobao:[...catalogs.taobao.entries],speed:catalogs.speed?.speed||null,speedError:catalogs.speedError||'',jdOwners:catalogs.jd.owners||{},jdGift:catalogs.jd.gift||null,jdThemes:catalogs.jd.themes||null,jdAlliances:catalogs.jd.alliances||{},jdOwnersUpdatedAt:catalogs.jd.ownersUpdatedAt||'',jdOwnersError:catalogs.jd.ownersError||''}:null}));
 async function readCatalogs(code){
- const results=await Promise.all(Object.entries(ADMIN_FILES).map(async([platform,file])=>{
+ const results=await Promise.all(Object.entries(ADMIN_FILES).filter(([platform])=>platform!=='speed').map(async([platform,file])=>{
   let response;try{response=await fetch('./'+file,{cache:'no-cache',credentials:'omit',signal:AbortSignal.timeout(20000)});}catch{throw Error('总览目录暂时无法读取，请稍后重试。');}
   if(!response.ok)throw Error('管理员目录尚未同步，请稍后重试。');
   const envelope=await response.json(),signature=JSON.stringify(envelope),catalog=signature===signatures?.[platform]?catalogs[platform]:await openAdminCatalog(envelope,code,platform);
   return {platform,signature,catalog};
  }));
- return {catalogs:Object.fromEntries(results.map(row=>[row.platform,row.catalog])),signatures:Object.fromEntries(results.map(row=>[row.platform,row.signature]))};
+ const values=Object.fromEntries(results.map(row=>[row.platform,row.catalog])),hashes=Object.fromEntries(results.map(row=>[row.platform,row.signature]));
+ try{const response=await fetch('./'+ADMIN_FILES.speed,{cache:'no-cache',credentials:'omit',signal:AbortSignal.timeout(20000)});if(!response.ok)throw Error();const envelope=await response.json(),signature=JSON.stringify(envelope);values.speed=signature===signatures?.speed?catalogs.speed:await openAdminCatalog(envelope,code,'speed');hashes.speed=signature;}catch{values.speed=catalogs?.speed||null;values.speedError='极速版数据读取未完成，'+(values.speed?'保留上次结果。':'尚无可展示数据。');hashes.speed=signatures?.speed||'';}
+ hashes.speedError=values.speedError||'';
+ return {catalogs:values,signatures:hashes};
 }
 function show(){if(catalogs)return;generation++;$('adminPassword').value='';$('adminError').textContent='';$('adminDialog').showModal();}
 $('adminLogo').onclick=show;$('closeAdmin').onclick=()=>$('adminDialog').close();
