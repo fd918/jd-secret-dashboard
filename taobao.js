@@ -1,8 +1,8 @@
-import {adminPage,sortedRows,bindTableSorting} from './admin-model.js?v=20261031-speed-v1';
+import {adminPage,sortedRows,bindTableSorting} from './admin-model.js?v=20261031-speed-v2';
 import {keywordDigest,updateScheduleLabel} from './snapshot.js';
 import {createSnapshotReader} from './refresh.js';
 import {beijingDate,rangeDates} from './model.js';
-import {TAOBAO_ACTIVITY_START,TB_FIELDS,TB_LABELS,TB_MONEY,normalizePid,normalizePids,summarizeTaobao,taobaoResult,emptyTaobao,validateTaobaoSnapshot} from './taobao-model.js?v=20261031-speed-v1';
+import {TAOBAO_ACTIVITY_START,TB_FIELDS,TB_LABELS,TB_MONEY,normalizePid,normalizePids,summarizeTaobao,taobaoResult,emptyTaobao,validateTaobaoSnapshot} from './taobao-model.js?v=20261031-speed-v2';
 const $=id=>document.getElementById(id),storageKey='yunzhan-public-taobao-pids-v1',esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const state={pids:[],snapshot:null,range:'today',custom:{},results:new Map(),trigger:null,undo:null,adminPids:null,adminPage:1,adminSearch:'',sort:{field:'give',direction:'desc'},renderGeneration:0};
 const shownPids=()=>state.adminPids??state.pids;

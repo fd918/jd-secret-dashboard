@@ -1,6 +1,6 @@
 import {snapshotResult} from './snapshot.js';
 import {normalizeKeyword,FIELDS,totalMetrics} from './model.js';
-import {cleanSpeed} from './speed-model.js';
+import {cleanSpeed} from './speed-model.js?v=20261031-speed-v2';
 import {normalizePid} from './taobao-model.js';
 
 export const ADMIN_ITERATIONS=600000;
