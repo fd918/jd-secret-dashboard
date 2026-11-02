@@ -1,5 +1,11 @@
 import {FIELDS,totalMetrics,missingTotals,beijingDate} from './model.js';
-export async function keywordDigest(word){const bytes=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(word));return [...new Uint8Array(bytes)].map(value=>value.toString(16).padStart(2,'0')).join('');}
+const digestCache=new Map();
+export function keywordDigest(word){
+ if(digestCache.has(word))return digestCache.get(word);
+ if(digestCache.size>=2000)digestCache.delete(digestCache.keys().next().value);
+ const pending=crypto.subtle.digest('SHA-256',new TextEncoder().encode(word)).then(bytes=>[...new Uint8Array(bytes)].map(value=>value.toString(16).padStart(2,'0')).join('')).catch(error=>{if(digestCache.get(word)===pending)digestCache.delete(word);throw error;});
+ digestCache.set(word,pending);return pending;
+}
 export function snapshotResult(snapshot,digest,keyword,range){
  if(snapshot?.schemaVersion!==1||!snapshot.words||Array.isArray(snapshot.words))throw Error('每日数据格式异常，请稍后重试。');
  const record=Object.hasOwn(snapshot.words,digest)?snapshot.words[digest]:null;

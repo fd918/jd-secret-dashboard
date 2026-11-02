@@ -1,6 +1,6 @@
-import {snapshotResult} from './snapshot.js';
+import {snapshotResult} from './snapshot.js?v=20261102-loading-v2';
 import {normalizeKeyword,FIELDS,totalMetrics} from './model.js';
-import {cleanSpeed} from './speed-model.js?v=20261031-speed-v2';
+import {cleanSpeed} from './speed-model.js?v=20261102-loading-v2';
 import {normalizePid} from './taobao-model.js';
 
 export const ADMIN_ITERATIONS=600000;
@@ -82,4 +82,26 @@ export function themeWordResult(themes,id,entries,word,range){
  const index=themeIndex(themes),item=index?.items.get(id),wi=index?.words.get(word),found=entries.includes(word)&&wi!==undefined&&(!id||item?.words.includes(wi)),days={};
  if(found)for(const date of range.dates){const day=index.days.get(date);if(!day)continue;const rows=(id?[day.rows.get(item.index+':'+wi)]:[...index.items.values()].map(i=>day.rows.get(i.index+':'+wi))).filter(Boolean);days[date]={updatedAt:day.updatedAt,recordCount:rows.length,totals:rows.length?totalMetrics(rows.map(numbers=>Object.fromEntries(FIELDS.map((f,i)=>[f,numbers[i]])))):Object.fromEntries(FIELDS.map(f=>[f,0]))};}
  return snapshotResult({schemaVersion:1,words:found?Object.fromEntries([[word,{days}]]) :{}},word,word,range);
+}
+
+// Display ordinals follow the current sorted/filtered page; source indexes remain action identities.
+export function numberRows(view,pageSize=50){return view.rows.map((row,index)=>({...row,ordinal:((view.page||1)-1)*pageSize+index+1}));}
+
+// Start all three platform reads together; a missing speed report must retain its last good result.
+export async function readAdminCatalogs({code,catalogs,signatures,request=globalThis.fetch,open=openAdminCatalog}){
+ const rows=await Promise.all(Object.entries(ADMIN_FILES).map(async([platform,file])=>{
+  try{
+   const response=await request('./'+file,{cache:'no-cache',credentials:'omit',signal:AbortSignal.timeout(20000)});
+   if(!response.ok)throw Error('管理员目录尚未同步，请稍后重试。');
+   const envelope=await response.json(),signature=JSON.stringify(envelope);
+   const catalog=signature===signatures?.[platform]&&catalogs?.[platform]?catalogs[platform]:await open(envelope,code,platform);
+   return {platform,signature,catalog};
+  }catch(error){
+   if(platform!=='speed')throw Error(error.message==='口令不正确，无法解锁总览。'?error.message:'总览目录暂时无法读取，请稍后重试。');
+   return {platform,catalog:catalogs?.speed||null,signature:signatures?.speed||'',error:'极速版数据读取未完成，'+(catalogs?.speed?'保留上次结果。':'尚无可展示数据。')};
+  }
+ }));
+ const values=Object.fromEntries(rows.map(r=>[r.platform,r.catalog])),hashes=Object.fromEntries(rows.map(r=>[r.platform,r.signature]));
+ values.speedError=rows.find(r=>r.platform==='speed').error||'';hashes.speedError=values.speedError;
+ return {catalogs:values,signatures:hashes};
 }

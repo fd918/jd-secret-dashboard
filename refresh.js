@@ -1,5 +1,5 @@
 import {FIELDS} from './model.js';
-import {keywordDigest,snapshotResult} from './snapshot.js';
+import {keywordDigest,snapshotResult} from './snapshot.js?v=20261102-loading-v2';
 
 export function createSnapshotReader(path,{fetch:request=globalThis.fetch,validate:customValidate}={}) {
   let cached=null,etag='',signature='',revision=0,pending=null;
