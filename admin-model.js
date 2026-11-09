@@ -88,8 +88,9 @@ export function themeWordResult(themes,id,entries,word,range){
 export function numberRows(view,pageSize=50){return view.rows.map((row,index)=>({...row,ordinal:((view.page||1)-1)*pageSize+index+1}));}
 
 // Start all three platform reads together; a missing speed report must retain its last good result.
-export async function readAdminCatalogs({code,catalogs,signatures,request=globalThis.fetch,open=openAdminCatalog}){
- const rows=await Promise.all(Object.entries(ADMIN_FILES).map(async([platform,file])=>{
+export async function readAdminCatalogs({code,catalogs,signatures,only,request=globalThis.fetch,open=openAdminCatalog}){
+ if(only&&!Object.hasOwn(ADMIN_FILES,only))throw Error('未知看板。');
+ const rows=await Promise.all(Object.entries(ADMIN_FILES).filter(([platform])=>!only||platform===only).map(async([platform,file])=>{
   try{
    const response=await request('./'+file,{cache:'no-cache',credentials:'omit',signal:AbortSignal.timeout(20000)});
    if(!response.ok)throw Error('管理员目录尚未同步，请稍后重试。');
@@ -97,11 +98,11 @@ export async function readAdminCatalogs({code,catalogs,signatures,request=global
    const catalog=signature===signatures?.[platform]&&catalogs?.[platform]?catalogs[platform]:await open(envelope,code,platform);
    return {platform,signature,catalog};
   }catch(error){
-   if(platform!=='speed')throw Error(error.message==='口令不正确，无法解锁总览。'?error.message:'总览目录暂时无法读取，请稍后重试。');
+   if(only||platform!=='speed')throw Error(error.message==='口令不正确，无法解锁总览。'?error.message:'总览目录暂时无法读取，请稍后重试。');
    return {platform,catalog:catalogs?.speed||null,signature:signatures?.speed||'',error:'极速版数据读取未完成，'+(catalogs?.speed?'保留上次结果。':'尚无可展示数据。')};
   }
  }));
- const values=Object.fromEntries(rows.map(r=>[r.platform,r.catalog])),hashes=Object.fromEntries(rows.map(r=>[r.platform,r.signature]));
- values.speedError=rows.find(r=>r.platform==='speed').error||'';hashes.speedError=values.speedError;
+ const values={...catalogs,...Object.fromEntries(rows.map(r=>[r.platform,r.catalog]))},hashes={...signatures,...Object.fromEntries(rows.map(r=>[r.platform,r.signature]))};
+ if(!only||only==='speed'){values.speedError=rows.find(r=>r.platform==='speed').error||'';hashes.speedError=values.speedError;}
  return {catalogs:values,signatures:hashes};
 }

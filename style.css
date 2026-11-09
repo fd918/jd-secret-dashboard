@@ -65,3 +65,6 @@
  .admin-controls .range-buttons{width:460px}.range-buttons button{white-space:nowrap}.jd-user-cell .user-identity-name-row,.jd-user-cell .user-identity-meta,.jd-user-cell .user-identity-phone{min-height:18px;line-height:18px}.jd-user-cell .user-identity-copy{height:18px;min-height:18px;line-height:18px}
  .details-focused .owner-sync{display:none!important}.details-focused .controls{padding:4px 10px;margin-bottom:4px}.details-focused .theme-filter{margin:4px 0}.details-focused .header .identity img{max-width:84px}.details-focused h1{font-size:18px}
 }
+
+/* The active platform timestamp shares the same right edge in the header. */
+.promotion-header-tools{display:flex;align-items:center;justify-content:flex-end;gap:12px;min-width:0}.promotion-header-tools .update{flex:1;text-align:right}#adminRefreshFeedback{display:block;margin-top:3px;font-size:12px}#adminRefreshFeedback[data-error=true]{color:#a33b35}@media(max-width:950px){.header{flex-wrap:wrap}.promotion-header-tools{margin-left:auto}}@media(max-width:750px){.promotion-header-tools{flex:1 1 100%;justify-content:space-between}.promotion-header-tools .header-status{justify-content:flex-end}.promotion-header-tools .update{align-items:flex-end;text-align:right}}
